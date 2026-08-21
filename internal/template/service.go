@@ -151,11 +151,16 @@ func (s *Service) redact(vars map[string]any, spec []Variable) map[string]string
 	out := map[string]string{}
 	for _, v := range spec {
 		if val, ok := vars[v.Name]; ok {
-			out[v.Name] = toString(val)
+			if v.Sensitive {
+				out[v.Name] = redacted
+			} else {
+				out[v.Name] = toString(val)
+			}
 		}
 	}
 	return out
 }
+const redacted = "[REDACTED]"
 func validateVersion(v Version) error {
 	if strings.TrimSpace(v.TextBody) == "" && strings.TrimSpace(v.HTMLBody) == "" {
 		return errors.New("template body required")
@@ -163,10 +168,15 @@ func validateVersion(v Version) error {
 	if len(v.TextBody)+len(v.HTMLBody) > 1<<20 {
 		return errors.New("template too large")
 	}
+	seen := map[string]struct{}{}
 	for _, x := range v.Variables {
 		if !regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]{0,63}$`).MatchString(x.Name) {
 			return errors.New("invalid variable name")
 		}
+		if _, dup := seen[x.Name]; dup {
+			return errors.New("duplicate variable: " + x.Name)
+		}
+		seen[x.Name] = struct{}{}
 	}
 	return nil
 }
@@ -177,8 +187,32 @@ func validateVars(spec []Variable, vars map[string]any) error {
 				return errors.New("missing variable: " + v.Name)
 			}
 		}
+		if val, ok := vars[v.Name]; ok && v.Type != "" {
+			if !typeMatches(v.Type, val) {
+				return errors.New("variable type mismatch: " + v.Name)
+			}
+		}
 	}
 	return nil
+}
+func typeMatches(t string, val any) bool {
+	switch t {
+	case "string":
+		_, ok := val.(string)
+		return ok
+	case "int":
+		switch x := val.(type) {
+		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+			return true
+		case float64:
+			return x == float64(int64(x))
+		}
+		return false
+	case "bool":
+		_, ok := val.(bool)
+		return ok
+	}
+	return true
 }
 func toString(v any) string {
 	switch x := v.(type) {

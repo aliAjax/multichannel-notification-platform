@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -29,21 +30,31 @@ func Load(path string) (Config, error) {
 		for _, line := range strings.Split(string(b), "\n") {
 			p := strings.SplitN(strings.TrimSpace(line), ":", 2)
 			if len(p) == 2 {
-				apply(&c, strings.TrimSpace(p[0]), strings.Trim(strings.TrimSpace(p[1]), "\"'"))
+				if e := apply(&c, strings.TrimSpace(p[0]), strings.Trim(strings.TrimSpace(p[1]), "\"'")); e != nil {
+					return c, e
+				}
 			}
 		}
 	}
 	for _, x := range []struct{ env, key string }{{"NOTIFY_HTTP_ADDR", "http_addr"}, {"NOTIFY_DATA_FILE", "data_file"}, {"NOTIFY_WEBHOOK_SECRET", "webhook_secret"}, {"NOTIFY_WORKER_CONCURRENCY", "worker_concurrency"}, {"NOTIFY_QUEUE_CAPACITY", "queue_capacity"}, {"NOTIFY_PROVIDER_TIMEOUT", "provider_timeout"}, {"NOTIFY_MAX_ATTEMPTS", "max_attempts"}} {
 		if v, ok := os.LookupEnv(x.env); ok {
-			apply(&c, x.key, v)
+			if e := apply(&c, x.key, v); e != nil {
+				return c, e
+			}
 		}
 	}
 	if c.WorkerConcurrency < 1 || c.QueueCapacity < 1 || c.MaxAttempts < 1 {
 		return c, errors.New("numeric configuration must be positive")
 	}
+	if c.ProviderTimeout <= 0 {
+		return c, errors.New("provider_timeout must be a positive duration")
+	}
+	if c.ShutdownTimeout <= 0 {
+		return c, errors.New("shutdown_timeout must be a positive duration")
+	}
 	return c, nil
 }
-func apply(c *Config, k, v string) {
+func apply(c *Config, k, v string) error {
 	switch k {
 	case "http_addr":
 		c.HTTPAddr = v
@@ -52,14 +63,35 @@ func apply(c *Config, k, v string) {
 	case "webhook_secret":
 		c.WebhookSecret = v
 	case "worker_concurrency":
-		c.WorkerConcurrency, _ = strconv.Atoi(v)
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("worker_concurrency: %w", err)
+		}
+		c.WorkerConcurrency = n
 	case "queue_capacity":
-		c.QueueCapacity, _ = strconv.Atoi(v)
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("queue_capacity: %w", err)
+		}
+		c.QueueCapacity = n
 	case "max_attempts":
-		c.MaxAttempts, _ = strconv.Atoi(v)
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("max_attempts: %w", err)
+		}
+		c.MaxAttempts = n
 	case "provider_timeout":
-		c.ProviderTimeout, _ = time.ParseDuration(v)
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("provider_timeout: %w", err)
+		}
+		c.ProviderTimeout = d
 	case "shutdown_timeout":
-		c.ShutdownTimeout, _ = time.ParseDuration(v)
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("shutdown_timeout: %w", err)
+		}
+		c.ShutdownTimeout = d
 	}
+	return nil
 }
