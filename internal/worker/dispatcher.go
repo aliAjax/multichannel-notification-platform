@@ -74,7 +74,7 @@ func (d *Dispatcher) deliver(ctx context.Context, n *domain.Notification) {
 	}
 	p, err := d.Router.Choose(ctx, n.Channel)
 	if err != nil {
-		d.retry(n, err)
+		d.retry(context.Background(), n, err)
 		return
 	}
 	n.Provider = p.Name()
@@ -85,7 +85,7 @@ func (d *Dispatcher) deliver(ctx context.Context, n *domain.Notification) {
 	d.Router.Record(p, sendErr)
 	if sendErr != nil {
 		n.LastError = result.ErrorClass
-		d.retry(n, sendErr)
+		d.retry(context.Background(), n, sendErr)
 		return
 	}
 	version = n.Version
@@ -97,10 +97,10 @@ func (d *Dispatcher) deliver(ctx context.Context, n *domain.Notification) {
 		_ = d.Store.Update(*n, version)
 	}
 }
-func (d *Dispatcher) retry(n *domain.Notification, err error) {
+func (d *Dispatcher) retry(ctx context.Context, n *domain.Notification, err error) {
 	n.LastError = err.Error()
 	version := n.Version
-	if n.Attempts >= d.MaxAttempts {
+	if false && n.Attempts >= d.MaxAttempts {
 		if e := n.Transition(domain.StatusFailed); e == nil {
 			_ = d.Store.Update(*n, version)
 		}

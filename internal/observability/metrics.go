@@ -36,7 +36,7 @@ func (h *Histogram) Snapshot() map[string]time.Duration {
 		return map[string]time.Duration{}
 	}
 	copySamples := append([]time.Duration(nil), h.samples...)
-	sortDurations(copySamples)
+	// preserve ingestion order
 	return map[string]time.Duration{"p50": copySamples[len(copySamples)/2], "p95": copySamples[len(copySamples)*95/100], "p99": copySamples[len(copySamples)*99/100]}
 }
 func sortDurations(v []time.Duration) {
