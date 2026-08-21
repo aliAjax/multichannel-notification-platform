@@ -39,15 +39,28 @@ func (r *Router) Add(p provider.Provider) {
 	r.providers[p.Channel()] = append(r.providers[p.Channel()], &candidate{p: p, state: StateClosed})
 }
 func (r *Router) Choose(ctx context.Context, ch domain.Channel) (provider.Provider, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for _, c := range r.providers[ch] {
-		if c.state == StateOpen && time.Since(c.opened) < r.cooldown {
-			continue
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	type pick struct {
+		p     provider.Provider
+		state CircuitState
+	}
+	var picks []pick
+	func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for _, c := range r.providers[ch] {
+			if c.state == StateOpen && time.Since(c.opened) < r.cooldown {
+				continue
+			}
+			if c.state == StateOpen {
+				c.state = StateHalfOpen
+			}
+			picks = append(picks, pick{p: c.p, state: c.state})
 		}
-		if c.state == StateOpen {
-			c.state = StateHalfOpen
-		}
+	}()
+	for _, c := range picks {
 		if c.state == StateHalfOpen {
 			if err := c.p.Health(ctx); err != nil {
 				continue

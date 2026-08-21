@@ -86,7 +86,7 @@ func (p *PolicySet) Put(r Rule) error {
 		r.Version = 1
 	}
 	r.UpdatedAt = time.Now().UTC()
-	p.rules[r.ID] = r
+	p.rules[r.ID] = cloneRule(r)
 	return nil
 }
 func (p *PolicySet) Delete(id string, version int64) error {
@@ -108,7 +108,7 @@ func (p *PolicySet) List(tenant string) []Rule {
 	out := []Rule{}
 	for _, r := range p.rules {
 		if tenant == "" || r.TenantID == tenant {
-			out = append(out, r)
+			out = append(out, cloneRule(r))
 		}
 	}
 	sort.Slice(out, func(i, j int) bool {
