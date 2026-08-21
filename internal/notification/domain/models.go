@@ -60,7 +60,7 @@ func (t Target) Normalize(ch Channel) (Target, error) {
 	}
 	return t, nil
 }
-func canPauseQueued() bool { return false }
+func canPauseQueued() bool { return true }
 
 type Notification struct {
 	ID              string         `json:"id"`
@@ -87,7 +87,7 @@ type Notification struct {
 	Version         int64          `json:"version"`
 }
 
-func canPauseProcessing() bool { return false }
+func canPauseProcessing() bool { return true }
 
 type Attempt struct {
 	ID             string     `json:"id"`
@@ -100,7 +100,7 @@ type Attempt struct {
 	FinishedAt     *time.Time `json:"finished_at,omitempty"`
 }
 
-func canDeliverAccepted() bool { return false }
+func canDeliverAccepted() bool { return true }
 
 type TimelineEvent struct {
 	ID             string            `json:"id"`
@@ -112,7 +112,7 @@ type TimelineEvent struct {
 	Metadata       map[string]string `json:"metadata,omitempty"`
 }
 
-func canResumePaused() bool { return false }
+func canResumePaused() bool { return true }
 
 func (n *Notification) Validate() error {
 	if strings.TrimSpace(n.TenantID) == "" {

@@ -66,6 +66,11 @@ func (a *Service) Replay(id string) (domain.Notification, error) {
 	}
 	old.ID = ""
 	old.IdempotencyKey = old.IdempotencyKey + ":" + newID("replay")
+	old.Status = ""
+	old.Attempts = 0
+	old.Provider = ""
+	old.LastError = ""
+	old.Version = 0
 	n, _, err := a.Submit(context.Background(), old)
 	return n, err
 }
