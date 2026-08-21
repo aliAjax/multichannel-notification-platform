@@ -29,7 +29,7 @@ func (s *Service) Ingest(e Event) (bool, error) {
 		return false, errors.New("unsupported receipt status")
 	}
 	if _, err := s.store.Get(e.NotificationID); err != nil {
-		return false, fmt.Errorf("receipt lookup: %v", err)
+		return false, fmt.Errorf("receipt lookup: %w", err)
 	}
 	key := e.Provider + ":" + e.ExternalID + ":" + formatSeq(e.Sequence)
 	return s.store.RecordReceipt(key, domain.TimelineEvent{ID: key, NotificationID: e.NotificationID, Provider: e.Provider, Status: e.Status, Sequence: e.Sequence, OccurredAt: e.OccurredAt}), nil

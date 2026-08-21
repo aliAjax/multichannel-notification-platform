@@ -88,7 +88,7 @@ func (s *Store) Get(id string) (domain.Notification, error) {
 	defer s.mu.RUnlock()
 	n, ok := s.data.Notifications[id]
 	if !ok {
-		return domain.Notification{}, fmt.Errorf("notification lookup: %v", ErrNotFound)
+		return domain.Notification{}, fmt.Errorf("notification lookup: %w", ErrNotFound)
 	}
 	return n, nil
 }
@@ -97,7 +97,7 @@ func (s *Store) Update(n domain.Notification, expected int64) error {
 	defer s.mu.Unlock()
 	old, ok := s.data.Notifications[n.ID]
 	if !ok {
-		return fmt.Errorf("notification update: %v", ErrNotFound)
+		return fmt.Errorf("notification update: %w", ErrNotFound)
 	}
 	if old.Version != expected {
 		return errors.New("version conflict")
