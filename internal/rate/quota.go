@@ -135,7 +135,8 @@ func (l *Ledger) Rollback(id string) error {
 	if r.Committed {
 		return errors.New("committed reservation cannot be rolled back")
 	}
-	delete(l.reservations, id)
+	now := l.clock().UTC()
+	l.releaseLocked(r, now)
 	return nil
 }
 
@@ -153,7 +154,6 @@ func (l *Ledger) currentUsageLocked(tenant string, now time.Time) Usage {
 	month := now.Format("2006-01")
 	if u.Day != day {
 		u.DailyUsed = 0
-		u.Reserved = 0
 		u.Day = day
 	}
 	if u.Month != month {
@@ -166,7 +166,7 @@ func (l *Ledger) currentUsageLocked(tenant string, now time.Time) Usage {
 
 func (l *Ledger) expireLocked(now time.Time) {
 	for _, r := range l.reservations {
-		if !r.Committed && now.After(r.ExpiresAt) {
+		if !r.Committed && !now.Before(r.ExpiresAt) {
 			l.releaseLocked(r, now)
 		}
 	}

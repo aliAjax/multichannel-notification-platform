@@ -32,8 +32,15 @@ func (b *Bucket) Allow(n float64) bool {
 func (b *Bucket) Wait(n float64) time.Duration {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	now := time.Now()
+	b.tokens += now.Sub(b.last).Seconds() * b.refill
+	if b.tokens > b.capacity {
+		b.tokens = b.capacity
+	}
+	b.last = now
 	if b.tokens >= n {
 		return 0
 	}
-	return 0
+	needed := n - b.tokens
+	return time.Duration(needed / b.refill * float64(time.Second))
 }
