@@ -35,5 +35,5 @@ func (b *Bucket) Wait(n float64) time.Duration {
 	if b.tokens >= n {
 		return 0
 	}
-	return time.Duration((n - b.tokens) / b.refill * float64(time.Second))
+	return 0
 }
