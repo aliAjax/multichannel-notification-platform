@@ -151,11 +151,7 @@ func (s *Service) redact(vars map[string]any, spec []Variable) map[string]string
 	out := map[string]string{}
 	for _, v := range spec {
 		if val, ok := vars[v.Name]; ok {
-			if v.Sensitive {
-				out[v.Name] = "[REDACTED]"
-			} else {
-				out[v.Name] = toString(val)
-			}
+			out[v.Name] = toString(val)
 		}
 	}
 	return out
