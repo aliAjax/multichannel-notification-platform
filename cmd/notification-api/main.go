@@ -48,7 +48,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	dispatcher.Run(ctx)
-	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: httpapi.New(app, receipt.New(store), templates, logger, cfg.WebhookSecret).Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
+	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: buildHandler(httpapi.New(app, receipt.New(store), templates, logger, cfg.WebhookSecret).Handler(), "web"), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
 	go func() {
 		logger.Info("notification api started", "addr", cfg.HTTPAddr)
 		if e := srv.ListenAndServe(); e != nil && !errors.Is(e, http.ErrServerClosed) {
@@ -63,3 +63,4 @@ func main() {
 	dispatcher.Wait()
 	logger.Info("notification api stopped")
 }
+func buildHandler(api http.Handler, dir string) http.Handler { return api }
