@@ -1,0 +1,9 @@
+http_addr: ":8080"
+data_file: "data/store.json"
+worker_concurrency: 4
+queue_capacity: 10000
+provider_timeout: "3s"
+max_attempts: 5
+shutdown_timeout: "10s"
+webhook_secret: ""
+

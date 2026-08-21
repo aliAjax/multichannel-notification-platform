@@ -1,0 +1,16 @@
+syntax = "proto3";
+package notification.v1;
+option go_package = "example.com/notification-platform/api/proto";
+service Dispatcher { rpc Submit(SubmitRequest) returns (SubmitResponse); }
+service ProviderHealth { rpc Report(HealthRequest) returns (HealthResponse); }
+service Receipt { rpc Ingest(ReceiptRequest) returns (ReceiptResponse); }
+service Template { rpc Render(RenderRequest) returns (RenderResponse); }
+message SubmitRequest { string tenant_id=1; string idempotency_key=2; string channel=3; repeated string targets=4; string body=5; }
+message SubmitResponse { string notification_id=1; string status=2; }
+message HealthRequest { string provider=1; bool healthy=2; }
+message HealthResponse { bool accepted=1; }
+message ReceiptRequest { string notification_id=1; string provider=2; string status=3; int64 sequence=4; }
+message ReceiptResponse { bool accepted=1; }
+message RenderRequest { string template_id=1; int32 version=2; }
+message RenderResponse { string subject=1; string text_body=2; string html_body=3; }
+

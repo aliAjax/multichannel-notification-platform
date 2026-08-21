@@ -1,0 +1,34 @@
+openapi: 3.1.0
+info:
+  title: Multichannel Notification Platform
+  version: 1.0.0
+paths:
+  /api/v1/notifications:
+    post:
+      operationId: submitNotification
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {$ref: '#/components/schemas/Notification'}}
+      responses: {'201': {description: queued}, '200': {description: idempotent replay}}
+    get: {responses: {'200': {description: list}}}
+  /api/v1/notifications/{id}: {get: {responses: {'200': {description: detail}}}}
+  /api/v1/notifications/{id}/timeline: {get: {responses: {'200': {description: timeline}}}}
+  /api/v1/webhooks/{provider}/receipts: {post: {responses: {'202': {description: accepted}}}}
+components:
+  schemas:
+    Notification:
+      type: object
+      required: [tenant_id, idempotency_key, channel, targets]
+      properties:
+        tenant_id: {type: string}
+        idempotency_key: {type: string}
+        channel: {type: string, enum: [email, sms, webhook, push]}
+        targets: {type: array, items: {type: object}}
+        priority: {type: integer, minimum: 0, maximum: 100}
+

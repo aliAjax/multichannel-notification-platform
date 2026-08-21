@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notification Operations</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div><p class="eyebrow">Delivery control plane</p><h1>Notification Operations</h1></div>
+    <div class="health"><span id="health-dot"></span><strong id="health-label">Checking API</strong></div>
+  </header>
+  <main>
+    <section class="toolbar" aria-label="Query controls">
+      <label>Tenant <input id="tenant" value="acme" autocomplete="off"></label>
+      <button id="refresh" type="button">Refresh</button>
+    </section>
+    <section class="summary" aria-label="Delivery summary">
+      <article><span>Queued</span><strong id="queued">0</strong></article>
+      <article><span>Processing</span><strong id="processing">0</strong></article>
+      <article><span>Delivered</span><strong id="delivered">0</strong></article>
+      <article><span>Failed</span><strong id="failed">0</strong></article>
+    </section>
+    <section class="table-section">
+      <div class="section-heading"><h2>Recent notifications</h2><span id="updated">Not loaded</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Channel</th><th>Status</th><th>Provider</th><th>Updated</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="5" class="empty">No data loaded</td></tr></tbody>
+      </table></div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

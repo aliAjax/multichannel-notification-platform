@@ -1,0 +1,12 @@
+{
+  "mode": "service",
+  "start": "go run ./cmd/notification-api",
+  "workdir": ".",
+  "env": {
+    "NOTIFY_HTTP_ADDR": "127.0.0.1:18080",
+    "NOTIFY_DATA_FILE": "data/smoke-store.json"
+  },
+  "ready_url": "http://127.0.0.1:18080/healthz",
+  "ready_status": [200],
+  "startup_timeout": 20
+}
