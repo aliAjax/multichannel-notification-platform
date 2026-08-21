@@ -134,7 +134,7 @@ func (r *Registry) Get(id string) (Configuration, error) {
 	defer r.mu.RUnlock()
 	c, exists := r.configs[id]
 	if !exists {
-		return Configuration{}, errors.New("provider configuration not found")
+		return Configuration{}, nil
 	}
 	return c, nil
 }
