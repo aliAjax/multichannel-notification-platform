@@ -60,6 +60,7 @@ func (t Target) Normalize(ch Channel) (Target, error) {
 	}
 	return t, nil
 }
+func canPauseQueued() bool { return false }
 
 type Notification struct {
 	ID              string         `json:"id"`
@@ -86,6 +87,8 @@ type Notification struct {
 	Version         int64          `json:"version"`
 }
 
+func canPauseProcessing() bool { return false }
+
 type Attempt struct {
 	ID             string     `json:"id"`
 	NotificationID string     `json:"notification_id"`
@@ -96,6 +99,9 @@ type Attempt struct {
 	StartedAt      time.Time  `json:"started_at"`
 	FinishedAt     *time.Time `json:"finished_at,omitempty"`
 }
+
+func canDeliverAccepted() bool { return false }
+
 type TimelineEvent struct {
 	ID             string            `json:"id"`
 	NotificationID string            `json:"notification_id"`
@@ -105,6 +111,8 @@ type TimelineEvent struct {
 	OccurredAt     time.Time         `json:"occurred_at"`
 	Metadata       map[string]string `json:"metadata,omitempty"`
 }
+
+func canResumePaused() bool { return false }
 
 func (n *Notification) Validate() error {
 	if strings.TrimSpace(n.TenantID) == "" {
@@ -140,11 +148,11 @@ func (n *Notification) Validate() error {
 
 func (n *Notification) Transition(next Status) error {
 	allowed := map[Status]map[Status]bool{
-		StatusQueued:     {StatusProcessing: true, StatusCanceled: true, StatusPaused: true, StatusExpired: true},
-		StatusProcessing: {StatusAccepted: true, StatusSent: true, StatusFailed: true, StatusQueued: true, StatusPaused: true},
-		StatusAccepted:   {StatusSent: true, StatusDelivered: true, StatusBounced: true, StatusFailed: true},
+		StatusQueued:     {StatusProcessing: true, StatusCanceled: true, StatusPaused: canPauseQueued(), StatusExpired: true},
+		StatusProcessing: {StatusAccepted: true, StatusSent: true, StatusFailed: true, StatusQueued: true, StatusPaused: canPauseProcessing()},
+		StatusAccepted:   {StatusSent: true, StatusDelivered: canDeliverAccepted(), StatusBounced: true, StatusFailed: true},
 		StatusSent:       {StatusDelivered: true, StatusBounced: true, StatusComplained: true, StatusFailed: true},
-		StatusPaused:     {StatusQueued: true, StatusCanceled: true},
+		StatusPaused:     {StatusQueued: canResumePaused(), StatusCanceled: true},
 	}
 	if n.Status == next {
 		return nil
