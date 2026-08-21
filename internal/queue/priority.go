@@ -44,7 +44,7 @@ func (q *Queue) Enqueue(n *domain.Notification) error {
 	if len(q.items) >= q.max {
 		return errors.New("queue capacity reached")
 	}
-	heap.Push(&q.items, &Item{N: n, enqueued: time.Now()})
+	heap.Push(&q.items, &Item{N: n.Clone(), enqueued: time.Now()})
 	select {
 	case q.wake <- struct{}{}:
 	default:

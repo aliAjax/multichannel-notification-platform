@@ -44,7 +44,7 @@ func (q *DelayQueue) Add(n *domain.Notification, due time.Time) bool {
 	if len(q.items) >= q.limit {
 		return false
 	}
-	heap.Push(&q.items, &delayedItem{notification: n, due: due})
+	heap.Push(&q.items, &delayedItem{notification: n.Clone(), due: due})
 	select {
 	case q.notify <- struct{}{}:
 	default:

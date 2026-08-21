@@ -86,6 +86,24 @@ type Notification struct {
 	Version         int64          `json:"version"`
 }
 
+// Clone returns an independent deep copy of n so a queue can store a snapshot
+// that callers cannot mutate after Enqueue/Add through the shared slice/map
+// headers embedded in the original pointer.
+func (n *Notification) Clone() *Notification {
+	c := *n
+	if n.Targets != nil {
+		c.Targets = make([]Target, len(n.Targets))
+		copy(c.Targets, n.Targets)
+	}
+	if n.Variables != nil {
+		c.Variables = make(map[string]any, len(n.Variables))
+		for k, v := range n.Variables {
+			c.Variables[k] = v
+		}
+	}
+	return &c
+}
+
 type Attempt struct {
 	ID             string     `json:"id"`
 	NotificationID string     `json:"notification_id"`
