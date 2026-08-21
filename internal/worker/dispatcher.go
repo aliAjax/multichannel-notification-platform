@@ -48,7 +48,16 @@ func (d *Dispatcher) loop(ctx context.Context, id int) {
 			}
 		}
 		if n.ScheduleAt != nil && time.Now().Before(*n.ScheduleAt) {
-			time.AfterFunc(time.Until(*n.ScheduleAt), func() { _ = d.Queue.Enqueue(n) })
+			timer := time.NewTimer(time.Until(*n.ScheduleAt))
+			go func() {
+				defer timer.Stop()
+				select {
+				case <-ctx.Done():
+					return
+				case <-timer.C:
+					_ = d.Queue.Enqueue(n)
+				}
+			}()
 			continue
 		}
 		d.deliver(ctx, n)
@@ -74,7 +83,7 @@ func (d *Dispatcher) deliver(ctx context.Context, n *domain.Notification) {
 	}
 	p, err := d.Router.Choose(ctx, n.Channel)
 	if err != nil {
-		d.retry(context.Background(), n, err)
+		d.retry(ctx, n, err)
 		return
 	}
 	n.Provider = p.Name()
@@ -85,7 +94,7 @@ func (d *Dispatcher) deliver(ctx context.Context, n *domain.Notification) {
 	d.Router.Record(p, sendErr)
 	if sendErr != nil {
 		n.LastError = result.ErrorClass
-		d.retry(context.Background(), n, sendErr)
+		d.retry(ctx, n, sendErr)
 		return
 	}
 	version = n.Version
@@ -99,17 +108,27 @@ func (d *Dispatcher) deliver(ctx context.Context, n *domain.Notification) {
 }
 func (d *Dispatcher) retry(ctx context.Context, n *domain.Notification, err error) {
 	n.LastError = err.Error()
-	version := n.Version
-	if false && n.Attempts >= d.MaxAttempts {
+	if n.Attempts >= d.MaxAttempts {
+		version := n.Version
 		if e := n.Transition(domain.StatusFailed); e == nil {
 			_ = d.Store.Update(*n, version)
 		}
 		return
 	}
+	version := n.Version
 	if e := n.Transition(domain.StatusQueued); e != nil {
 		return
 	}
 	_ = d.Store.Update(*n, version)
 	delay := time.Duration(math.Pow(2, float64(n.Attempts))) * 100 * time.Millisecond
-	time.AfterFunc(delay, func() { _ = d.Queue.Enqueue(n) })
+	timer := time.NewTimer(delay)
+	go func() {
+		defer timer.Stop()
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			_ = d.Queue.Enqueue(n)
+		}
+	}()
 }

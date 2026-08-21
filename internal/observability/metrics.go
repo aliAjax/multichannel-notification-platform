@@ -18,6 +18,7 @@ func (c *Counter) Value() uint64 { c.mu.Lock(); defer c.mu.Unlock(); return c.va
 type Histogram struct {
 	mu      sync.Mutex
 	samples []time.Duration
+	head    int
 }
 
 func (h *Histogram) Observe(d time.Duration) {
@@ -25,7 +26,11 @@ func (h *Histogram) Observe(d time.Duration) {
 	if len(h.samples) < 10000 {
 		h.samples = append(h.samples, d)
 	} else {
-		h.samples[len(h.samples)%10000] = d
+		h.samples[h.head] = d
+		h.head++
+		if h.head >= len(h.samples) {
+			h.head = 0
+		}
 	}
 	h.mu.Unlock()
 }
@@ -36,7 +41,7 @@ func (h *Histogram) Snapshot() map[string]time.Duration {
 		return map[string]time.Duration{}
 	}
 	copySamples := append([]time.Duration(nil), h.samples...)
-	// preserve ingestion order
+	sortDurations(copySamples)
 	return map[string]time.Duration{"p50": copySamples[len(copySamples)/2], "p95": copySamples[len(copySamples)*95/100], "p99": copySamples[len(copySamples)*99/100]}
 }
 func sortDurations(v []time.Duration) {
