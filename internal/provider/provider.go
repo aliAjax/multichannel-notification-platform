@@ -68,6 +68,12 @@ type HTTP struct {
 
 func (h *HTTP) Name() string            { return h.ProviderName }
 func (h *HTTP) Channel() domain.Channel { return h.ProviderChannel }
+func (h *HTTP) client() *http.Client {
+	if h.Client == nil {
+		return http.DefaultClient
+	}
+	return h.Client
+}
 func (h *HTTP) Send(ctx context.Context, r Request) (Result, error) {
 	if h.URL == "" {
 		return Result{}, errors.New("provider URL is empty")
@@ -77,7 +83,7 @@ func (h *HTTP) Send(ctx context.Context, r Request) (Result, error) {
 		return Result{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := h.Client.Do(req)
+	resp, err := h.client().Do(req)
 	if err != nil {
 		return Result{Retryable: true, ErrorClass: "network"}, err
 	}
@@ -95,7 +101,7 @@ func (h *HTTP) Health(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := h.Client.Do(req)
+	resp, err := h.client().Do(req)
 	if err != nil {
 		return err
 	}
