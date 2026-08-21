@@ -21,7 +21,7 @@ func Sign(secret string, timestamp int64, body []byte) string {
 	return hex.EncodeToString(m.Sum(nil))
 }
 func Verify(secret, signature string, timestamp int64, body []byte, maxSkew time.Duration) error {
-	if time.Since(time.Unix(timestamp, 0)) > maxSkew || time.Until(time.Unix(timestamp, 0)) > maxSkew {
+	if time.Since(time.Unix(timestamp, 0)) > maxSkew {
 		return errors.New("receipt timestamp outside replay window")
 	}
 	got, err := hex.DecodeString(signature)
